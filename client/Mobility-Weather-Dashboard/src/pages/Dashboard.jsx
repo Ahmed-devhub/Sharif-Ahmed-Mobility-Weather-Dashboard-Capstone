@@ -13,6 +13,7 @@ function Dashboard() {
   const refresh = useSelector((state)=> state.data.refresh)
   const [borough, setBorough] = useState([])
   const [trendData, setTrendData] = useState([])
+  const [insight, setInsight] = useState()
   const boroughColors = {
     Brooklyn: "#ff6384",
     Manhattan: "#36a2eb",
@@ -61,6 +62,14 @@ function Dashboard() {
       catch(err){
         console.log(err)
       }
+
+      try{
+        const insightRes = await axios.get('http://localhost:5000/api/analytics/insights')
+        setInsight(insightRes.data.summary)
+      }
+      catch(err){
+        console.log(err)
+      }
     }
 
     fetchData();
@@ -81,7 +90,10 @@ function Dashboard() {
       dispatch(setRefresh(refreshRes.data)) 
 
       const trendRes = await axios.get(`http://localhost:5000/api/trend/bronx`)
-      setTrendData(trendRes.data)      
+      setTrendData(trendRes.data)
+      
+      const insightRes = await axios.get('http://localhost:5000/api/analytics/insights')
+      setInsight(insightRes.data.summary)
 
       if(refreshRes.data.success){
         setTimeout(() => {
@@ -168,6 +180,8 @@ function Dashboard() {
         <Legend />
         <Line type="monotone" dataKey="avg_speed" stroke="#ff7f50" strokeWidth={2}/>
       </LineChart>
+      <h2>Insight:</h2>
+      <p>{insight}</p>
     </>
   );
 }
