@@ -1,16 +1,16 @@
 import express from 'express'
 import 'dotenv/config'
 import axios from 'axios'
-import DailyData from '../models/DailyData'
+import DailyData from '../models/DailyData.js'
 
 const router = express.Router()
 
 router.get('/weather/:location', async(req,res)=>{
     let cleanedWeatherData = {}
     const apiKey = process.env.OPENWEATHER_API_KEY
-    if(req.params.location.trim() === "") return
-    if(!isNaN(req.params.location)){
-        const isZipcode = req.params.location
+    const location = req.params.location.trim()
+    if(!location) return
+        const isZipcode = !isNaN(location)
         const url = isZipcode
             ? `https://api.openweathermap.org/data/2.5/weather?zip=${location},us&appid=${apiKey}`
             : `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}`
@@ -26,7 +26,6 @@ router.get('/weather/:location', async(req,res)=>{
                 main: weatherRes.data.weather[0].main,
                 sunrise: weatherRes.data.sys.sunrise,
                 sunset: weatherRes.data.sys.sunset,
-                timezone: weatherRes.data.timezone
             }
             return res.json(cleanedWeatherData)
         }
@@ -34,15 +33,14 @@ router.get('/weather/:location', async(req,res)=>{
             console.log("Weather API Error: " + e)
             return res.json({error: "Failed to fetch weather data"})
         }
-    }
 })
 
-router.get('traffic/:borough', async(req,res)=>{
+router.get('/traffic/:borough', async(req,res)=>{
     let totalSpeed=0;
     let count=0;
     const cleanedTrafficData = {}
-    const borough = req.params.borough
-    const url = `https://data.cityofnewyork.us/resource/i4gi-tjb9.json?$where=borough=${borough}`
+    const borough = req.params.borough.replace("-", " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+    const url = `https://data.cityofnewyork.us/resource/i4gi-tjb9.json?$where=borough=%27${borough}%27`
     try{
         const trafficRes = await axios.get(url)
         cleanedTrafficData.borough = borough
@@ -52,7 +50,12 @@ router.get('traffic/:borough', async(req,res)=>{
                 count += 1
             }
         }
-        const averageSpeed = totalSpeed / count
+        let averageSpeed = 0;
+        if (count > 0) {
+            averageSpeed = Number((totalSpeed / count).toFixed(2));
+        } else {
+            averageSpeed = 0;
+        }
         cleanedTrafficData.avg_speed = averageSpeed
         
         let congestion = ""
@@ -76,16 +79,16 @@ router.get('traffic/:borough', async(req,res)=>{
 })
 
 router.post('/refresh-data', async(req,res)=>{
+    let cleanedWeatherData = {}
     const apiKey = process.env.OPENWEATHER_API_KEY
-    const location = req.body.location
-    if(location.trim() === "") return
-    if(!isNaN(location)){
-        const isZipcode = location
-        const url = isZipcode
+    const location = req.body.location.trim()
+    if(!location) return
+        const isZipcode = !isNaN(location)
+        const weatherUrl = isZipcode
             ? `https://api.openweathermap.org/data/2.5/weather?zip=${location},us&appid=${apiKey}`
             : `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}`
         try{
-            const weatherRes = await axios.get(url)
+            const weatherRes = await axios.get(weatherUrl)
             cleanedWeatherData = {
                 city: weatherRes.data.name,
                 temp: weatherRes.data.main.temp,
@@ -96,30 +99,35 @@ router.post('/refresh-data', async(req,res)=>{
                 main: weatherRes.data.weather[0].main,
                 sunrise: weatherRes.data.sys.sunrise,
                 sunset: weatherRes.data.sys.sunset,
-                timezone: weatherRes.data.timezone
             }
         }
         catch(e){
             console.log("Weather API Error: " + e)
             return res.json({error: "Failed to fetch weather data"})
         }
-    }
 
     let totalSpeed=0;
     let count=0;
     const cleanedTrafficData = {}
-    const borough = req.body.borough
-    const url = `https://data.cityofnewyork.us/resource/i4gi-tjb9.json?$where=borough=${borough}`
+
+    const borough = req.body.borough.trim().replace("-", " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+    console.log("Refresh Borough:", borough);
+    const trafficUrl = `https://data.cityofnewyork.us/resource/i4gi-tjb9.json?$where=borough=%27${borough}%27`
     try{
-        const trafficRes = await axios.get(url)
-        cleanedTrafficData.borough = borough
+        const trafficRes = await axios.get(trafficUrl)
+        cleanedTrafficData.borough = borough .replace("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());
         for (let row of trafficRes.data){
             if(row.speed){
                 totalSpeed += Number(row.speed)
                 count += 1
             }
         }
-        const averageSpeed = totalSpeed / count
+        let averageSpeed = 0;
+        if (count > 0) {
+            averageSpeed = Number((totalSpeed / count).toFixed(2));
+        } else {
+            averageSpeed = 0;
+        }
         cleanedTrafficData.avg_speed = averageSpeed
         
         let congestion = ""
@@ -158,7 +166,27 @@ router.post('/refresh-data', async(req,res)=>{
         } 
         )
     }
-    return res.json({success: "Successfully save the data into MongoDB"})
+    return res.json({updatedAt: new Date(), success: "Successfully save the data into MongoDB"})
+})
+
+router.get('/trend/:borough', async(req,res)=>{
+    try{
+        const borough = req.params.borough.replace("-", " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+        const records = await DailyData.find({borough: borough}).sort({updatedAt: 1})
+
+        const cleanedRecord = records.map(record=> (
+        {
+            updatedAt: record.updatedAt,
+            avg_speed: record.traffic.avg_speed
+        }
+        ))
+
+        return res.json(cleanedRecord)
+    }
+    catch(e){
+        console.log("MongoDb Data Fetch Error: " + e)
+        return res.json({error: "Failed to fetch data from mongoDb"})        
+    }
 })
 
 

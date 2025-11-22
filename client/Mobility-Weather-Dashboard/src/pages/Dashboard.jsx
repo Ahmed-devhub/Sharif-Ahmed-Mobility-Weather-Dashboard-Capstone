@@ -3,7 +3,7 @@ import axios from "axios"
 import { useDispatch, useSelector } from "react-redux"
 import { setWeather, setTraffic, setRefresh } from "../redux/slices/dataSlice.js"
 import KPICard from "../components/KPICard.jsx"
-import {BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell} from "recharts";
+import {BarChart, LineChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell} from "recharts";
 
 function Dashboard() {
 
@@ -12,6 +12,7 @@ function Dashboard() {
   const traffic = useSelector((state) => state.data.traffic)
   const refresh = useSelector((state)=> state.data.refresh)
   const [borough, setBorough] = useState([])
+  const [trendData, setTrendData] = useState([])
   const boroughColors = {
     Brooklyn: "#ff6384",
     Manhattan: "#36a2eb",
@@ -23,14 +24,14 @@ function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const weatherRes = await axios.get("http://localhost:5000/api/weather/staten%20island");
+        const weatherRes = await axios.get("http://localhost:5000/api/weather/bronx");
         dispatch(setWeather(weatherRes.data));
       } catch (err) {
         console.log(err);
       }
 
       try {
-        const trafficRes = await axios.get("http://localhost:5000/api/traffic/staten%20island");
+        const trafficRes = await axios.get("http://localhost:5000/api/traffic/bronx");
         dispatch(setTraffic(trafficRes.data));
       } catch (err) {
         console.log(err);
@@ -52,6 +53,14 @@ function Dashboard() {
       catch(err){
         console.log(err)
       }
+
+      try{
+        const trendRes = await axios.get(`http://localhost:5000/api/trend/bronx`)
+        setTrendData(trendRes.data)      
+      }
+      catch(err){
+        console.log(err)
+      }
     }
 
     fetchData();
@@ -59,27 +68,40 @@ function Dashboard() {
 
   async function handleRefresh(){
     try{
-      const weatherRes = await axios.get("http://localhost:5000/api/weather/staten%20island")
+      const weatherRes = await axios.get("http://localhost:5000/api/weather/bronx")
       dispatch(setWeather(weatherRes.data))
 
-      const trafficRes = await axios.get("http://localhost:5000/api/traffic/staten%20island")
+      const trafficRes = await axios.get("http://localhost:5000/api/traffic/bronx")
       dispatch(setTraffic(trafficRes.data))
 
       const refreshRes = await axios.post("http://localhost:5000/api/refresh-data",{
-        location: "10314",
-        borough: "staten island"
+        location: "10453",
+        borough: "bronx"
       })
       dispatch(setRefresh(refreshRes.data)) 
+
+      const trendRes = await axios.get(`http://localhost:5000/api/trend/bronx`)
+      setTrendData(trendRes.data)      
 
       if(refreshRes.data.success){
         setTimeout(() => {
           dispatch(setRefresh({ updatedAt: refreshRes.data.updatedAt })) 
-        }, 7000)
+        }, 3000)
       }
     }
     catch(err){
       console.log(err)
     }
+  }
+
+  function trendDataFormattedDateAndTime(dateString){
+    const d = new Date(dateString);
+    return d.toLocaleString("en-US", {
+      hour: "numeric",
+      minute: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   }
 
   return (
@@ -120,22 +142,32 @@ function Dashboard() {
       <button onClick = {handleRefresh}>Refresh</button>    
 
       <BarChart width={500} height={300} data={borough}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="borough" />
-      <YAxis />
-      <Tooltip />
-      <Legend />
-      <Bar dataKey="avg_speed">
-        {
-          borough.map((entry, index) => (
-            <Cell 
-              key={`cell-${index}`}
-              fill={boroughColors[entry.borough]}
-            />
-          ))
-        } 
-      </Bar>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="borough" />
+        <YAxis />
+        <Tooltip />
+        <Legend />
+        <Bar dataKey="avg_speed">
+          {
+            borough.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`}
+                fill={boroughColors[entry.borough]}
+              />
+            ))
+          } 
+        </Bar>
       </BarChart>
+      
+      <h2>Traffic Trend Over Time</h2>
+      <LineChart width={600} height={300} data={trendData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="updatedAt" tickFormatter={trendDataFormattedDateAndTime}/>
+        <YAxis />
+        <Tooltip labelFormatter={trendDataFormattedDateAndTime}/>
+        <Legend />
+        <Line type="monotone" dataKey="avg_speed" stroke="#ff7f50" strokeWidth={2}/>
+      </LineChart>
     </>
   );
 }
