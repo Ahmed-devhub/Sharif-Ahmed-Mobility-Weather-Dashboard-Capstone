@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useState } from 'react'
+import Login from './Login'
 
 function Explore(){
 
@@ -17,6 +18,13 @@ function Explore(){
 
         const trafficRes = await axios.get(`http://localhost:5000/api/traffic/${selection}`)
         setTrafficData(trafficRes.data)
+
+        const userId = localStorage.getItem("userId")
+        const storeSeaarch = await axios.post(`http://localhost:5000/api/search-history`,{
+            userId: userId,
+            borough: selection,
+            zip: search
+        })
     }
 
     async function handleCompare() {

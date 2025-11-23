@@ -17,7 +17,8 @@ function Login(){
             })
             if(res.data.success){
                 localStorage.setItem("isLoggedIn","true")
-                    navigate("/dashboard")  
+                localStorage.setItem("userId",res.data.user._id)
+                navigate("/dashboard")  
             }   
             else{
                 navigate("/login")
