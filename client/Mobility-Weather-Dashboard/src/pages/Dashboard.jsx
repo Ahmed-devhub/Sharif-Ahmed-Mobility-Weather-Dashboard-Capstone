@@ -12,6 +12,7 @@ function Dashboard() {
   const traffic = useSelector((state) => state.data.traffic)
   const refresh = useSelector((state)=> state.data.refresh)
   const [borough, setBorough] = useState([])
+  const [select, setSelect] = useState("bronx")
   const [trendData, setTrendData] = useState([])
   const [insight, setInsight] = useState()
   const boroughColors = {
@@ -25,14 +26,14 @@ function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const weatherRes = await axios.get("http://localhost:5000/api/weather/bronx");
+        const weatherRes = await axios.get(`http://localhost:5000/api/weather/${select}`);
         dispatch(setWeather(weatherRes.data));
       } catch (err) {
         console.log(err);
       }
 
       try {
-        const trafficRes = await axios.get("http://localhost:5000/api/traffic/bronx");
+        const trafficRes = await axios.get(`http://localhost:5000/api/traffic/${select}`);
         dispatch(setTraffic(trafficRes.data));
       } catch (err) {
         console.log(err);
@@ -56,7 +57,7 @@ function Dashboard() {
       }
 
       try{
-        const trendRes = await axios.get(`http://localhost:5000/api/trend/bronx`)
+        const trendRes = await axios.get(`http://localhost:5000/api/trend/${select}`)
         setTrendData(trendRes.data)      
       }
       catch(err){
@@ -73,23 +74,31 @@ function Dashboard() {
     }
 
     fetchData();
-  }, []);
+  }, [select]);
+
+  const boroughZip = {
+    bronx: "10453",
+    brooklyn: "11230",
+    manhattan: "10001",
+    queens: "11368",
+    "staten-island": "10314"
+  };
 
   async function handleRefresh(){
     try{
-      const weatherRes = await axios.get("http://localhost:5000/api/weather/bronx")
+      const weatherRes = await axios.get(`http://localhost:5000/api/weather/${select}`)
       dispatch(setWeather(weatherRes.data))
 
-      const trafficRes = await axios.get("http://localhost:5000/api/traffic/bronx")
+      const trafficRes = await axios.get(`http://localhost:5000/api/traffic/${select}`)
       dispatch(setTraffic(trafficRes.data))
 
       const refreshRes = await axios.post("http://localhost:5000/api/refresh-data",{
-        location: "10453",
-        borough: "bronx"
+        location: boroughZip[select],
+        borough: `${select}`
       })
       dispatch(setRefresh(refreshRes.data)) 
 
-      const trendRes = await axios.get(`http://localhost:5000/api/trend/bronx`)
+      const trendRes = await axios.get(`http://localhost:5000/api/trend/${select}`)
       setTrendData(trendRes.data)
       
       const insightRes = await axios.get('http://localhost:5000/api/analytics/insights')
@@ -125,6 +134,14 @@ function Dashboard() {
           {refresh.success}
         </p>
       )}
+
+      <select value={select} onChange={e => setSelect(e.target.value)}>
+        <option value="bronx">Bronx</option>
+        <option value="brooklyn">Brooklyn</option>
+        <option value="manhattan">Manhattan</option>
+        <option value="queens">Queens</option>
+        <option value="staten-island">Staten Island</option>
+      </select>
 
       <KPICard title="Temperature (°C)" value={(weather?.temp - 273.15).toFixed(1)}/>
       <KPICard title="Condition" value={weather?.main}/>
