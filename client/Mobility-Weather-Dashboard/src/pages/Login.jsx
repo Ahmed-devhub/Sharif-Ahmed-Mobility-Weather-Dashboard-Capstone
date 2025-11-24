@@ -18,7 +18,9 @@ function Login(){
             if(res.data.success){
                 localStorage.setItem("isLoggedIn","true")
                 localStorage.setItem("userId",res.data.user._id)
-                navigate("/dashboard")  
+                setTimeout(() => {
+                    navigate("/dashboard");
+                }, 30); 
             }   
             else{
                 navigate("/login")

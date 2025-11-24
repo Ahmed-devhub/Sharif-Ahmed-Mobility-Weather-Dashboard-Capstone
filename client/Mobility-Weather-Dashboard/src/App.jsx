@@ -7,31 +7,22 @@ import About from "./pages/About.jsx";
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 
+
+function ProtectedRoute({ children }) {
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+
+    return loggedIn ? (
+        <>
+            <Navbar />
+            {children}
+        </>
+    ) : (
+        <Navigate to="/login" replace />
+    );
+}
+
 function App(){
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [loading, setLoading] = useState(true);
-    useEffect(() => {
-        const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-        setIsLoggedIn(loggedIn);
-        setLoading(false);
-    }, []);
-
-    function ProtectedRoute({ children }) {
-        return isLoggedIn ? (
-            <>
-                <Navbar />
-                {children} 
-            </>
-        ): (
-            <Navigate to="/login" />
-        )
-    }
-
-    if (loading) {
-        return <p>Loading...</p>;
-    }
-
-
+    
     return (
         <Router>
             <Routes>

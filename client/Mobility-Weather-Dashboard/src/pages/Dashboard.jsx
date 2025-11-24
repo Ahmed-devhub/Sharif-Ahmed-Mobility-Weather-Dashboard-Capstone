@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import axios from "axios"
 import { useDispatch, useSelector } from "react-redux"
 import { setWeather, setTraffic, setRefresh } from "../redux/slices/dataSlice.js"
-import KPICard from "../components/KPICard.jsx"
 import {BarChart, LineChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell} from "recharts";
 import "../styles/Dashboard.css";
 
@@ -27,6 +26,7 @@ function Dashboard() {
 
   useEffect(() => {
     async function fetchData() {
+      let trafficRes;
       try {
         const weatherRes = await axios.get(`http://localhost:5000/api/weather/${select}`);
         dispatch(setWeather(weatherRes.data));
@@ -35,16 +35,21 @@ function Dashboard() {
       }
 
       try {
-        const trafficRes = await axios.get(`http://localhost:5000/api/traffic/${select}`);
+        trafficRes = await axios.get(`http://localhost:5000/api/traffic/${select}`);
         dispatch(setTraffic(trafficRes.data));
       } catch (err) {
         console.log(err);
       }
 
       try {
-        const boroughs = ['brooklyn', 'queens', 'bronx', 'manhattan', 'staten-island']
+        const boroughs = ['brooklyn', 'queens', 'bronx', 'manhattan', 'staten island']
+        const primary = [{
+          borough: trafficRes.data.borough,
+          avg_speed: trafficRes.data.avg_speed
+        }]
+        const otherBoroughs = boroughs.filter(b => b !== select);
         const result = await Promise.all(
-          boroughs.map(borough =>
+          otherBoroughs.map(borough =>
             axios.get(`http://localhost:5000/api/traffic/${borough}`)
           )
         )
@@ -52,7 +57,7 @@ function Dashboard() {
           borough: res.data.borough,
           avg_speed: res.data.avg_speed
         }))
-        setBorough(data)
+        setBorough([...primary,...data])
       }
       catch(err){
         console.log(err)
@@ -65,18 +70,17 @@ function Dashboard() {
       catch(err){
         console.log(err)
       }
-
-      try{
-        const insightRes = await axios.get('http://localhost:5000/api/analytics/insights')
-        setInsight(insightRes.data.summary)
-      }
-      catch(err){
-        console.log(err)
-      }
     }
 
     fetchData();
   }, [select]);
+
+  useEffect(() => {
+    if (borough.length > 0 && weather) {
+      const realInsight = generateInsight(borough, weather);
+      setInsight(realInsight);
+    }
+  }, [borough, weather]);
 
   const boroughZip = {
     bronx: "10453",
@@ -100,11 +104,27 @@ function Dashboard() {
       })
       dispatch(setRefresh(refreshRes.data)) 
 
+      const boroughs = ['brooklyn', 'queens', 'bronx', 'manhattan', 'staten island']
+      const primary = [{
+        borough: trafficRes.data.borough,
+        avg_speed: trafficRes.data.avg_speed
+      }]
+      const otherBoroughs = boroughs.filter(b => b !== select);
+      const result = await Promise.all(
+        otherBoroughs.map(borough =>
+          axios.get(`http://localhost:5000/api/traffic/${borough}`)
+        )
+      )
+      const data = result.map(res=>({
+        borough: res.data.borough,
+        avg_speed: res.data.avg_speed
+      }))
+      setBorough([...primary,...data])
+
       const trendRes = await axios.get(`http://localhost:5000/api/trend/${select}`)
       setTrendData(trendRes.data)
       
-      const insightRes = await axios.get('http://localhost:5000/api/analytics/insights')
-      setInsight(insightRes.data.summary)
+      setInsight(generateInsight([...primary, ...data],weatherRes.data));
 
       if (refreshRes.data.success) {
         dispatch(setRefresh({
@@ -130,13 +150,33 @@ function Dashboard() {
     });
   }
 
+  function generateInsight(boroughData, weather) {
+    if (!boroughData || boroughData.length === 0) return "";
+    const sorted = [...boroughData].sort((a, b) => a.avg_speed - b.avg_speed);
+    const worst = sorted[0];
+    const best = sorted[sorted.length - 1]; 
+    let cond = (weather?.main || "").toLowerCase();
+    let weatherImpact = "";
+
+    if (cond.includes("rain")) weatherImpact = "Rain likely increased congestion.";
+    else if (cond.includes("snow")) weatherImpact = "Snow may have slowed traffic.";
+    else if (cond.includes("cloud")) weatherImpact = "Cloudy conditions — minimal impact.";
+    else if (cond.includes("clear")) weatherImpact = "Clear weather ideal for traffic flow.";
+    else weatherImpact = "Weather conditions appear normal today.";
+
+    return `${worst.borough} has the highest congestion right now (avg speed ${worst.avg_speed} mph).
+            ${best.borough} is currently the fastest borough (avg speed ${best.avg_speed} mph).
+            ${weatherImpact}`;
+  }
+
+
   return (
     <div className="dashboard-container">
       <h1 className="dashboard-title">DASHBOARD</h1>
 
       {showSuccess && (
         <p className="success-msg">
-          {refresh.success}
+          Data updated successfully!
         </p>
       )}
 
