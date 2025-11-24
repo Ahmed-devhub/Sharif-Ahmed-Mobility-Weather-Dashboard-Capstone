@@ -1,5 +1,5 @@
 import express from "express";
-import SearchHistory from "../models/SearchHistory";
+import SearchHistory from "../models/SearchHistory.js";
 
 const router = express.Router();
 

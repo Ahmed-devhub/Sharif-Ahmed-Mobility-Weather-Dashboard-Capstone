@@ -146,7 +146,10 @@ router.post('/refresh-data', async(req,res)=>{
         console.log("Traffic API Error: " + e)
         return res.json({error: "Failed to fetch traffic data"})
     }
-    const today = new Date().toISOString().slice(0,10)
+    function getESTDate() {
+        return new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }))
+    }
+    const today = getESTDate().toISOString().slice(0, 10)
     const record = await DailyData.findOne({date: today, borough: borough})
     if(!record){
         await DailyData.create({
@@ -161,22 +164,22 @@ router.post('/refresh-data', async(req,res)=>{
             $set: {
                 weather: cleanedWeatherData,
                 traffic: cleanedTrafficData,
-                updatedAt: new Date() 
+                updatedAt: getESTDate() 
             }
         } 
         )
     }
-    return res.json({updatedAt: new Date(), success: "Successfully save the data into MongoDB"})
+    return res.json({updatedAt: getESTDate(), success: "Successfully save the data into MongoDB"})
 })
 
 router.get('/trend/:borough', async(req,res)=>{
     try{
         const borough = req.params.borough.replace("-", " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-        const records = await DailyData.find({borough: borough}).sort({updatedAt: 1})
+        const records = await DailyData.find({borough: borough}).sort({date: 1})
 
         const cleanedRecord = records.map(record=> (
         {
-            updatedAt: record.updatedAt,
+            date: record.date,
             avg_speed: record.traffic.avg_speed
         }
         ))
@@ -191,7 +194,10 @@ router.get('/trend/:borough', async(req,res)=>{
 
 router.get("/analytics/insights", async (req, res) => {
     try {
-        const today = new Date().toISOString().slice(0,10);
+        function getESTDate() {
+            return new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }))
+        }
+        const today = getESTDate().toISOString().slice(0, 10) 
         const records = await DailyData.find({ date: today });
         if (records.length === 0) {
         return res.json({ summary: "No data available for today." });

@@ -1,7 +1,7 @@
 import axios from 'axios'
-import {useNavigate} from 'react-router-dom'
+import {useNavigate, Link} from 'react-router-dom'
 import { useState } from 'react'
-
+import "../styles/Login.css";
 
 function Login(){
 
@@ -9,9 +9,9 @@ function Login(){
     const [password, setPassword] = useState("")
     const navigate = useNavigate()
 
-    function handleLogin(){
+    async function handleLogin(){
         try{
-            const res = axios.post('http://localhost:5000/api/login',{
+            const res = await axios.post('http://localhost:5000/api/login',{
                 email: email,
                 password: password
             })
@@ -30,12 +30,19 @@ function Login(){
         }
     }
     return (
-        <>
-            <h2>Login</h2>
-            <input value={email} onChange={(e)=>setEmail(e.target.value)} placeholder='Email' />
-            <input value={password} onChange={(e)=>setPassword(e.target.value)} placeholder='Password' />
-            <button onClick={handleLogin}>Sumbit</button>
-        </>
+        <div className="login-container">
+            <div className="login-card">
+                <h2>Login</h2>
+                <input className="login-input" value={email} onChange={(e)=>setEmail(e.target.value)} placeholder='Email' />
+                <input className="login-input" value={password} onChange={(e)=>setPassword(e.target.value)} placeholder='Password' />
+                <button className="login-button" onClick={handleLogin}>Submit</button>
+                <p className="signup-text">Don't have an account?{" "}
+                    <Link to="/signup" className="signup-link">
+                        Sign up
+                    </Link>
+                </p>
+            </div>
+        </div>
     )
 }
 

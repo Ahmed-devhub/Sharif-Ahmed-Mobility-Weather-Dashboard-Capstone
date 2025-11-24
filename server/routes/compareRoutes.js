@@ -34,9 +34,24 @@ router.get("/compare", async (req, res) => {
     const avgA = calcAvgSpeed(resA.data);
     const avgB = calcAvgSpeed(resB.data);
 
+    function getCongestionLevel(averageSpeed){
+      if(averageSpeed >= 20){
+        return "Low"
+      }
+      else if (averageSpeed >= 10 && averageSpeed <20){
+        return "Medium"
+      }
+      else{  
+        return "High"
+      }
+    }
+
+    const congestionA = getCongestionLevel(avgA);
+    const congestionB = getCongestionLevel(avgB);
+
     return res.json({
-      boroughA: { name: boroughA, avg_speed: avgA, congestion_level: resA.data.congestion_level},
-      boroughB: { name: boroughB, avg_speed: avgB, congestion_level: resB.data.congestion_level},
+      boroughA: { name: boroughA, avg_speed: avgA, congestion_level: congestionA},
+      boroughB: { name: boroughB, avg_speed: avgB, congestion_level: congestionB},
       faster: avgA > avgB ? boroughA : boroughB,
       slower: avgA < avgB ? boroughA : boroughB
     });

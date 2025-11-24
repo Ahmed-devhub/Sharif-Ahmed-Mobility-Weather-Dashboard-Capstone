@@ -1,5 +1,6 @@
 import express from 'express'
 import User from '../models/User.js'
+
 const route = express.Router()
 
 
@@ -15,10 +16,11 @@ route.post('/signup',async(req,res)=>{
 })
 
 route.post('/login',async(req,res)=>{
-    const foundUser = await User.findOne(req.body.email)
+    const email = req.body.email
+    const foundUser = await User.findOne({email})
     if(foundUser){
         if(foundUser.password === req.body.password){
-            res.json({success: true, user: {name: foundUser.name, email: foundUser.email}})
+            res.json({success: true, user: {_id: foundUser._id, name: foundUser.name, email: foundUser.email}})
         }
         else{
             res.json({success: false})
@@ -28,3 +30,5 @@ route.post('/login',async(req,res)=>{
         res.json({message: "User not Found!"})
     }
 })
+
+export default route

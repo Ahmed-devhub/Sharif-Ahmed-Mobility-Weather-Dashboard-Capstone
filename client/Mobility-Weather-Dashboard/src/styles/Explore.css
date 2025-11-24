@@ -1,0 +1,79 @@
+.explore-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.explore-title {
+  font-size: 30px;
+  margin-bottom: 25px;
+}
+
+.section-box {
+  background: #ffffff;
+  padding: 20px 25px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.07);
+  margin-bottom: 35px;
+}
+
+.section-title {
+  font-size: 22px;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.input-row input,
+.input-row select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.primary-btn {
+  padding: 10px 18px;
+  border: none;
+  background: #007bff;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.primary-btn:hover {
+  background: #0059c8;
+}
+
+.result-box {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f7faff;
+  border-left: 4px solid #007bff;
+  border-radius: 8px;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.compare-table th,
+.compare-table td {
+  border: 1px solid #ccc;
+  padding: 12px;
+  text-align: center;
+}
+
+.compare-table th {
+  background: #f1f1f1;
+  font-weight: bold;
+}
