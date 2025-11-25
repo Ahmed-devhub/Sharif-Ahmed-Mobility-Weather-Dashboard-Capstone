@@ -91,7 +91,7 @@ POST /api/login # Login
 - Scheduled background jobs
 - ML traffic prediction model
 - Accessibility improvements (keyboard navigation, color contrast adjustments)
-
+- Dark mode theming for better user experience and modern UI design
 ---
 
 ## Author
