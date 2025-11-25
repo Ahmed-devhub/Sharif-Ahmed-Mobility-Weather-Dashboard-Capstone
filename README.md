@@ -90,6 +90,7 @@ POST /api/login # Login
 - Add maps (Mapbox/Leaflet)
 - Scheduled background jobs
 - ML traffic prediction model
+- Accessibility improvements (keyboard navigation, color contrast adjustments)
 
 ---
 
